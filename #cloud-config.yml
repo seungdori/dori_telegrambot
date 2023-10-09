@@ -1,0 +1,313 @@
+#cloud-config
+packages_update: true
+packages_upgrade: true
+
+packages:
+  - npm
+  - python3-pip
+  - python3.10-venv
+  - net-tools
+  - unzip
+  - ntp
+
+locale: ko_KR.UTF-8
+
+write_files:
+- path: /etc/systemd/system/pm2-root.service
+  owner: root:root
+  permissions: '0755'
+  content: |
+    [Unit]
+    Description=PM2 process manager
+    Documentation=https://pm2.keymetrics.io/
+    After=network.target
+    [Service]
+    Type=forking
+    User=root
+    LimitNOFILE=infinity
+    LimitNPROC=infinity
+    LimitCORE=infinity
+    Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+    Environment=PM2_HOME=/root/.pm2
+    PIDFile=/root/.pm2/pm2.pid
+    Restart=on-failure
+
+    ExecStart=/usr/local/lib/node_modules/pm2/bin/pm2 resurrect
+    ExecReload=/usr/local/lib/node_modules/pm2/bin/pm2 reload all
+    ExecStop=/usr/local/lib/node_modules/pm2/bin/pm2 kill
+
+    [Install]
+    WantedBy=multi-user.target
+
+- path: /etc/systemd/system/ntpd-sync.service
+  owner: root:root
+  permissions: '0755'
+  content: |
+    [Unit]
+    Description=Sync system time every 5 minutes
+
+    [Service]
+    Type=oneshot
+    ExecStart=/usr/sbin/ntpd -qg
+
+- path: /etc/systemd/system/ntpd-sync.timer
+  owner: root:root
+  permissions: '0755'
+  content: |
+    [Unit]
+    Description=Run ntpd-sync.service every 5 minutes
+
+    [Timer]
+    OnBootSec=5min
+    OnUnitActiveSec=5min
+
+    [Install]
+    WantedBy=timers.target
+
+- path: /etc/systemd/system/pocketbase.service
+  owner: root:root
+  permissions: '0755'
+  content: |
+    [Unit]
+    Description=pocketbase
+
+    [Service]
+    Type           = simple
+    User           = root
+    Group          = root
+    LimitNOFILE    = 4096
+    Restart        = always
+    RestartSec     = 5s
+    StandardOutput = append:/root/db/errors.log
+    StandardError  = append:/root/db/errors.log
+    ExecStart      = /root/db/pocketbase serve --http="0.0.0.0:8090"
+
+
+    [Install]
+    WantedBy=multi-user.target
+
+
+- path: /root/.env
+  content: |
+    USE_DISCORD="FALSE"
+    USE_TELEGRAM="TRUE"
+    PASSWORD="PASSWORD"
+    BINANCE_KEY=""
+    BINANCE_SECRET=""
+    UPBIT_KEY=""
+    UPBIT_SECRET=""
+    BYBIT_KEY=""
+    BYBIT_SECRET=""
+    OKX_KEY=""
+    OKX_SECRET=""
+    OKX_PASSPHRASE=""
+    BITGET_KEY=""
+    BITGET_SECRET=""
+    BITGET_PASSPHRASE=""
+    WHITELIST=["127.0.0.1", ""]
+    DISCORD_WEBHOOK_URL="WEBHOOKURL"
+    TELEGRAM_BOT_TOKEN = 'BOT_TOKEN'
+    TELEGRAM_CHAT_ID = 'CHAT_ID'
+    PORT="80"
+    DB_ID="dori@admin.com"
+    DB_PASSWORD="dori$@!"
+- path: /etc/environment
+  content: |
+    DOMAIN=""
+    APP_NAME="DORI"
+  append: true
+- path: /root/.bash_functions
+  content: |
+    #! /bin/bash
+    # shellcheck disable=SC1091
+    source /etc/environment
+
+    if [[ -z "$DOMAIN" ]]; then
+      domain="127.0.0.1"
+      is_domain=false
+      port="80"
+    else
+      domain="$DOMAIN"
+      is_domain=true
+      port="8000"
+    fi
+
+    if [[ -z "$APP_NAME" ]]; then
+      app_name="DORI"
+    else
+      app_name=$APP_NAME
+    fi
+
+    app_dir="/root/$app_name"
+    interpreter_path="/root/DORI/.venv/bin/python3.10"
+
+    print_env() {
+      echo "domain: $domain"
+      echo "port: $port"
+      echo "app_name: $app_name"
+    }
+    caddy_start() {
+      caddy start --config /etc/caddy/Caddyfile
+    }
+
+    caddy_run() {
+      caddy run --config /etc/caddy/Caddyfile
+    }
+
+    caddy_stop() {
+      caddy stop
+    }
+
+    flush() {
+      pm2 flush
+    }
+
+    monitor() {
+      pm2 logs
+    }
+
+    list() {
+      pm2 list
+    }
+
+    quit() {
+      if [[ $is_domain == true ]]; then
+        caddy_stop
+      fi
+
+      pm2 delete "$app_name"
+    }
+
+    activate() {
+      source "$app_dir/.venv/bin/activate"
+    }
+
+    pm2_start() {
+      pm2 start "$1" --interpreter "$interpreter_path"
+    }
+
+    start() {
+      quit
+      if [[ $is_domain == true ]]; then
+        caddy_start
+      fi
+
+      flush
+      pm2 start "$app_dir/run.py" --name "$app_name" --interpreter "$interpreter_path" -- --port="$port"
+    }
+
+    download_dori() {
+      git clone https://github.com/seungdori/dori_telegram.git "$app_dir"
+    }
+
+    download_pocketbase() {
+      n=0; while [ $n -lt 5 ] && ! wget "https://github.com/pocketbase/pocketbase/releases/download/v0.16.6/pocketbase_0.16.6_linux_amd64.zip" -O /root/pocketbase.zip || ! unzip -j /root/pocketbase.zip pocketbase -d /root/db; do echo "명령어 실행에 실패했습니다. 5초 후 재시도합니다..."; sleep 5; n=$((n+1)); done
+      rm -rf /root/pocketbase.zip
+    }
+
+    download() {
+      git clone https://github.com/seungdori/dori_telegram.git "$app_dir"
+    }
+
+    remove() {
+      cd /root
+      quit
+      rm -rf "$app_dir"
+    }
+
+    install() {
+      download
+      python3.10 -m venv "$app_dir/.venv"
+      $interpreter_path -m pip install -r "$app_dir"/requirements.txt
+    }
+
+    reinstall() {
+      cp -f "$app_dir"/.env /root
+      cp -f "$app_dir"/store.db /root
+      remove
+      install
+      cp -f "/root/.env" "$app_dir/.env"
+      cp -f "/root/store.db" "$app_dir/store.db"
+      rm -rf "/root/.env"
+      rm -rf "/root/store.db"
+    }
+
+    update() {
+      quit
+      cd "$app_dir"
+      git pull --rebase
+      cd /root
+      start
+    }
+
+    print_env
+
+    export -f print_env
+    export -f caddy_start
+    export -f caddy_run
+    export -f caddy_stop
+    export -f flush
+    export -f monitor
+    export -f list
+    export -f quit
+    export -f activate
+    export -f pm2_start
+    export -f start
+    export -f download_dori
+    export -f download_pocketbase
+    export -f download
+    export -f remove
+    export -f install
+    export -f reinstall
+    export -f update
+- path: /root/.bashrc
+  content: |
+    if [ -f ~/.bash_functions ]; then
+      . ~/.bash_functions
+    fi
+  append: true
+
+runcmd:
+  - export HOME="/root"
+  - timedatectl set-timezone Asia/Seoul
+  - ufw allow ssh
+  - ufw allow 123/udp
+  - ufw allow from 52.89.214.238 to any port 80,443 proto tcp
+  - ufw allow from 34.212.75.30 to any port 80,443 proto tcp
+  - ufw allow from 54.218.53.128 to any port 80,443 proto tcp
+  - ufw allow from 52.32.178.7 to any port 80,443 proto tcp
+
+  - ufw --force enable
+  - npm install pm2@latest -g
+  - npm cache clean -f
+  - npm install n -g
+  - n stable
+  - n=0; while [ $n -lt 5 ] && ! wget https://github.com/caddyserver/caddy/releases/download/v2.6.4/caddy_2.6.4_linux_amd64.tar.gz; do echo "Command failed. Retrying in 5 seconds..."; sleep 5; n=$((n+1)); done
+  - tar -xf caddy_*_linux_amd64.tar.gz
+  - mv caddy /usr/bin/
+  - chmod +x /usr/bin/caddy
+  - rm -rf caddy_*_linux_amd64.tar.gz
+  - git clone  "https://github.com/seungdori/dori_telegram.git" /root/DORI
+  - n=0; while [ $n -lt 5 ] && ! wget "https://github.com/pocketbase/pocketbase/releases/download/v0.16.6/pocketbase_0.16.6_linux_amd64.zip" -O /root/pocketbase.zip || ! unzip -j /root/pocketbase.zip pocketbase -d /root/db; do echo "명령어 실행에 실패했습니다. 5초 후 재시도합니다..."; sleep 5; n=$((n+1)); done
+  - cp -rf /root/DORI/pb_data /root/db/pb_data
+  - chmod +x /root/db/pocketbase
+  - rm -rf /root/pocketbase.zip
+  - python3.10 -m venv /root/DORI/.venv
+  - /root/DORI/.venv/bin/python3.10 -m pip install -r /root/DORI/requirements.txt
+  - cd "/root"
+  - cp -f "/root/.env" "/root/DORI/.env"
+  - rm -rf "/root/.env"
+  - systemctl daemon-reload
+  - systemctl stop ntp
+  - systemctl disable ntp
+  - [systemctl, enable, pm2-root.service]
+  - [systemctl, enable, pocketbase.service]
+  - [systemctl, enable, ntpd-sync.service]
+  - [systemctl, enable, ntpd-sync.timer]
+  
+  - pm2 start "/root/DORI/run.py" --name "DORI" --interpreter "/root/DORI/.venv/bin/python3.10" -- --port=80
+  - pm2 save
+power_state:
+  delay: "now"
+  mode: reboot
+  message: Reboot
