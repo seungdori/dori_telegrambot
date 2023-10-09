@@ -230,9 +230,9 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
     if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
         close_type = "2nd 100%"
     elif (order_info.percent is not None or order_info.percent != 100) and order_info.is_close:
-        close_type = f"1st {order_info.tp1_qty}%"
+        close_type = f"1st {order_info.tp1_perc}%"
     print(order_info.last_entry)
-    print(f"order percent : {order_info.tp1_qty}%")
+    print(f"order percent : {order_info.tp1_perc}%")
     if use_telegram:
         if order_info.is_entry:
             telegram_message = f"{side_emoji} {symbol} - {side} - 진입 ${round(order_info.price, 3)} - 손절 {round(order_info.sl,3)} - 규모 ${round(order_info.amount*order_info.price,3)} - 레버리지 {order_info.leverage}배 - {date} - {exchange_name}"
