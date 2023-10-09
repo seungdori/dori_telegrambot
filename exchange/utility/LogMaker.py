@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dhooks import Webhook, Embed
 from loguru import logger
 from devtools import debug, pformat
-from telegram import Bot
+from telegram import Bot, OrderInfo
 import telepot
 import traceback
 import os
@@ -30,7 +30,11 @@ print(f"use_telegram is set to {use_telegram}")
 
 
 def send_telegram_message(message):
-    telegram_bot.sendMessage(chat_id=telegram_chat_id, text=message)
+    try:
+        telegram_bot.sendMessage(chat_id=telegram_chat_id, text=message)
+        print(f"Debug - Successfully sent message to Telegram: {message}")
+    except Exception as e:
+        print(f"Debug - Failed to send message to Telegram: {e}")
 
 
 logger.remove(0)
@@ -218,15 +222,18 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
             name="레버리지", value=f"{order_info.leverage}배", inline=False)
     log_message(content, embed)
 
-    close_type = "2nd"
-    if (order_info.percent != 100) and order_info.is_close:
-        close_type = "1st"
-
+    close_type = "2nd 100%"
+    if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
+        close_type = "2nd 100%"
+    elif (order_info.percent is not None or order_info.percent != 100) and order_info.is_close:
+        close_type = f"1st {order_info.percent}%"
+    print(order_info.last_entry)
+    print(f"order percent : {order_info.percent}%")
     if use_telegram:
         if order_info.is_entry:
             telegram_message = f"{side_emoji} {symbol} - {side} - 진입 ${round(order_info.price, 3)} - 손절 {round(order_info.sl,3)} - 규모 ${round(order_info.amount*order_info.price,3)} - 레버리지 {order_info.leverage}배 - {date} - {exchange_name}"
         elif order_info.is_close:
-            telegram_message = f"{side_emoji} {symbol} - {close_type} {side} - -진입 ${round(order_info.last_entry, 3)} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - {date} - {exchange_name}"
+            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 - -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - {date} - {exchange_name}"
         else:
             logger.info("Neither entry nor close event detected.")
         send_telegram_message(telegram_message)
