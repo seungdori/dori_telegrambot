@@ -224,7 +224,7 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
     log_message(content, embed)
 
     if order_info.leverage is not None:
-        last_leverage = order_info.leverage  # 레버리지 값 업데이트
+        last_leverage = order_info.leverage 
 
     close_type = "2nd 100%"
     if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
