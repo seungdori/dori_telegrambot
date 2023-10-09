@@ -22,7 +22,7 @@ telegram_bot = telepot.Bot(telegram_bot_token)
 use_discord_str = os.getenv('USE_DISCORD', 'FALSE')
 use_telegram_str = os.getenv('USE_TELEGRAM', 'TRUE')
 
-
+last_leverage = None
 use_discord = True if use_discord_str.upper() == 'TRUE' else False
 use_telegram = True if use_telegram_str.upper() == 'TRUE' else False
 print(f"use_discord is set to {use_discord}")
@@ -58,10 +58,10 @@ except Exception as e:
     print("웹훅 URL이 유효하지 않습니다: ", settings.DISCORD_WEBHOOK_URL)
 
 color_map = {
-    "롱 진입": 0x0000FF,  # 파란색
-    "숏 진입": 0xFF0000,  # 빨간색
-    "롱 종료": 0x99ccff,  # 기본 색상
-    "숏 종료": 0x99ccff,  # 기본 색상
+    "LONG" or "롱 진입": 0x0000FF,  # 파란색
+    "SHORT" or "숏 진입": 0xFF0000,  # 빨간색
+    "익절" or "롱 종료": 0x99ccff,  # 기본 색상
+    "손절" or "숏 종료": 0x99ccff,  # 기본 색상
     "매수": 0x99ccff,    # 기본 색상
     "매도": 0x99ccff     # 기본 색상
 }
@@ -113,6 +113,7 @@ def log_message(message="None", embed: Embed = None):
 
 
 def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder):
+    global last_leverage
     date = parse_time(datetime.utcnow().timestamp())
     tp = order_info.tp
     sl = order_info.sl
