@@ -14,6 +14,7 @@ import os
 from dotenv import load_dotenv
 env_path = '/root/DORI/.env'
 load_dotenv(dotenv_path=env_path)
+last_leverage = None
 
 telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
 telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
@@ -222,9 +223,8 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
             name="레버리지", value=f"{order_info.leverage}배", inline=False)
     log_message(content, embed)
 
-    last_leverage = None
     if order_info.leverage is not None:
-        last_leverage = order_info.leverage  # 레버리지 값 업데이트
+        last_leverage = order_info.leverage 
 
     close_type = "2nd 100%"
     if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
