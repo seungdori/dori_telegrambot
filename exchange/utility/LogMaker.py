@@ -237,7 +237,7 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
         if order_info.is_entry:
             telegram_message = f"{side_emoji} {symbol} - {side} - 진입 ${round(order_info.price, 3)} - 손절 {round(order_info.sl,3)} - 규모 ${round(order_info.amount*order_info.price,3)} - 레버리지 {order_info.leverage}배 - {date} - {exchange_name}"
         elif order_info.is_close:
-            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - 레버리지 {last_leverage}배 - {date} - {exchange_name}"
+            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - {date} - {exchange_name}"
         else:
             logger.info("Neither entry nor close event detected.")
         send_telegram_message(telegram_message)
