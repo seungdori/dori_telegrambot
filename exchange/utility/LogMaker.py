@@ -223,7 +223,6 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
             name="레버리지", value=f"{order_info.leverage}배", inline=False)
     log_message(content, embed)
 
-    last_leverage = None
     if order_info.leverage is not None:
         last_leverage = order_info.leverage  # 레버리지 값 업데이트
 
