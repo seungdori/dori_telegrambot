@@ -22,7 +22,6 @@ telegram_bot = telepot.Bot(telegram_bot_token)
 use_discord_str = os.getenv('USE_DISCORD', 'FALSE')
 use_telegram_str = os.getenv('USE_TELEGRAM', 'TRUE')
 
-last_leverage = None
 use_discord = True if use_discord_str.upper() == 'TRUE' else False
 use_telegram = True if use_telegram_str.upper() == 'TRUE' else False
 print(f"use_discord is set to {use_discord}")
@@ -223,16 +222,17 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
             name="레버리지", value=f"{order_info.leverage}배", inline=False)
     log_message(content, embed)
 
+    last_leverage = None
     if order_info.leverage is not None:
-        last_leverage = order_info.leverage 
+        last_leverage = order_info.leverage  # 레버리지 값 업데이트
 
     close_type = "2nd 100%"
     if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
         close_type = "2nd 100%"
     elif (order_info.percent is not None or order_info.percent != 100) and order_info.is_close:
-        close_type = f"1st {order_info.percent}%"
+        close_type = f"1st {order_info.tp1_qty}%"
     print(order_info.last_entry)
-    print(f"order percent : {order_info.percent}%")
+    print(f"order percent : {order_info.tp1_qty}%")
     if use_telegram:
         if order_info.is_entry:
             telegram_message = f"{side_emoji} {symbol} - {side} - 진입 ${round(order_info.price, 3)} - 손절 {round(order_info.sl,3)} - 규모 ${round(order_info.amount*order_info.price,3)} - 레버리지 {order_info.leverage}배 - {date} - {exchange_name}"
