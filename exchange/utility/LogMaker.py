@@ -231,17 +231,17 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
         close_type = "2nd 100%"
     elif (order_info.tp1_perc is not None or order_info.tp1_perc != 100) and order_info.is_close:
         close_type = f"1st {order_info.tp1_perc}%"
-    print(order_info.last_entry)
-    print(f"order percent : {order_info.tp1_perc}%")
+
+
     if use_telegram:
         if order_info.is_entry:
             telegram_message = f"{side_emoji} {symbol} - {side} - 진입 ${round(order_info.price, 3)} - 손절 {round(order_info.sl,3)} - 규모 ${round(order_info.amount*order_info.price,3)} - 레버리지 {order_info.leverage}배 - {date} - {exchange_name}"
         elif order_info.is_close:
-            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - {date} - {exchange_name}"
+            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - 레버리지 {last_leverage}배 - {date} - {exchange_name}"
         else:
             logger.info("Neither entry nor close event detected.")
         send_telegram_message(telegram_message)
-        print(f"Debug - Telegram message: {telegram_message}")
+
 
 
 def log_hedge_message(exchange, base, quote, exchange_amount, upbit_amount, hedge):
