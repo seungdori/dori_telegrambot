@@ -196,7 +196,7 @@ class OrderRequest(BaseModel):
     leverage: int | None = None
     tp: float | None = None
     sl: float | None = None
-    tp1_qty: int | None = 100
+    tp1_perc: int | None = 100
     profit_state: int | None = None
     last_entry: float | None = ""
     stop_price: float | None = None
