@@ -31,7 +31,7 @@ import discord
 import requests  # Using requests for simplicity, you can use any HTTP library
 
 
-VERSION = "0.30.2"
+VERSION = "0.4.1"
 app = FastAPI(default_response_class=ORJSONResponse)
 
 
