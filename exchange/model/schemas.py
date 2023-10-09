@@ -197,7 +197,7 @@ class OrderRequest(BaseModel):
     tp: float | None = None
     sl: float | None = None
     profit_state: int | None = None
-    last_entry: float | None = None
+    last_entry: float | None = ""
     stop_price: float | None = None
     profit_price: float | None = None
     order_name: str = "주문"
