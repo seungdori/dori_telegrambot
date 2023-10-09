@@ -222,6 +222,10 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
             name="레버리지", value=f"{order_info.leverage}배", inline=False)
     log_message(content, embed)
 
+    last_leverage = None
+    if order_info.leverage is not None:
+        last_leverage = order_info.leverage  # 레버리지 값 업데이트
+
     close_type = "2nd 100%"
     if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
         close_type = "2nd 100%"
@@ -233,7 +237,7 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
         if order_info.is_entry:
             telegram_message = f"{side_emoji} {symbol} - {side} - 진입 ${round(order_info.price, 3)} - 손절 {round(order_info.sl,3)} - 규모 ${round(order_info.amount*order_info.price,3)} - 레버리지 {order_info.leverage}배 - {date} - {exchange_name}"
         elif order_info.is_close:
-            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 - -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - {date} - {exchange_name}"
+            telegram_message = f"{side_emoji} {symbol} - {close_type} {side}발동 -진입 ${order_info.last_entry} - 종료 ${round(order_info.price, 3)} - 규모 ${round(order_info.amount * order_info.price,3)} - 레버리지 {last_leverage}배 - {date} - {exchange_name}"
         else:
             logger.info("Neither entry nor close event detected.")
         send_telegram_message(telegram_message)
