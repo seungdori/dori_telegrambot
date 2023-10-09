@@ -227,9 +227,9 @@ def log_order_message(exchange_name, order_result: dict, order_info: MarketOrder
         last_leverage = order_info.leverage 
 
     close_type = "2nd 100%"
-    if (order_info.percent is None or order_info.percent==100) and order_info.is_close:
+    if (order_info.tp1_perc is None or order_info.tp1_perc==100) and order_info.is_close:
         close_type = "2nd 100%"
-    elif (order_info.percent is not None or order_info.percent != 100) and order_info.is_close:
+    elif (order_info.tp1_perc is not None or order_info.tp1_perc != 100) and order_info.is_close:
         close_type = f"1st {order_info.tp1_perc}%"
     print(order_info.last_entry)
     print(f"order percent : {order_info.tp1_perc}%")
